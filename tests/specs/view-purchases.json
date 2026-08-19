@@ -1,13 +1,13 @@
 [
   {
-    "name": "View My Purchases",
+    "name": "View My Purchases shows an inviting empty state",
     "steps": [
       {
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "See the status of purchased ad slots"
+              "text": "You don't have any purchases yet — browse ad slots to get started."
             }
           }
         ],

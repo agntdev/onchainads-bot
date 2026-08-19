@@ -47,6 +47,7 @@ function getBot(env: WorkerEnv): Promise<Bot<Ctx>> {
         // process.env and cannot reliably keep a five-minute interval alive.
         telemetryEnv: env,
         telemetryReporterOptions: { flushOnRecord: true, startTimer: false },
+        persistentEnv: env as unknown as Record<string, unknown>,
       });
       await bot.init();
       return bot;

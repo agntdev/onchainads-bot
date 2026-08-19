@@ -1,15 +1,20 @@
-import { Composer } from "grammy";
-import { createBot, type BotContext, type CreateBotOptions } from "./toolkit/index.js";
+import { Bot, Composer } from "grammy";
+import { createBot, createPersistentStore, type BotContext, type CreateBotOptions, type PersistentStore } from "./toolkit/index.js";
 import type { StorageAdapter } from "grammy";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  step?: "awaiting_tx" | "awaiting_slot_name" | "awaiting_slot_price" | "awaiting_slot_duration" | "awaiting_slot_rules" | "awaiting_slot_edit_price";
+  purchaseId?: string;
+  draftSlot?: { name?: string; price?: string; durationDays?: number };
+  editSlotId?: string;
 }
 
-export type Ctx = BotContext<Session>;
+// Runtime bindings are structurally different between Node and Workers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Ctx = BotContext<Session> & { store: PersistentStore; env?: any };
 
 /**
  * BuildBotOptions lets a runtime-specific ENTRY POINT (never a feature handler)
@@ -29,6 +34,8 @@ export interface BuildBotOptions {
   storage?: StorageAdapter<Session>;
   telemetryEnv?: CreateBotOptions<Session>["telemetryEnv"];
   telemetryReporterOptions?: CreateBotOptions<Session>["telemetryReporterOptions"];
+  /** Worker bindings used by the durable domain-record store. */
+  persistentEnv?: Record<string, unknown>;
 }
 
 /**
@@ -48,6 +55,12 @@ export async function buildBot(token: string, opts: BuildBotOptions = {}) {
     storage: opts.storage,
     telemetryEnv: opts.telemetryEnv,
     telemetryReporterOptions: opts.telemetryReporterOptions,
+  }) as unknown as Bot<Ctx>;
+
+  const store = createPersistentStore(() => opts.persistentEnv);
+  bot.use(async (ctx, next) => {
+    ctx.store = store;
+    await next();
   });
 
   const handlers = opts.handlers ?? (await loadHandlersFromDisk());

@@ -1,17 +1,19 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard, registerMainMenuItem } from "../toolkit/index.js";
+import { purchasesForBuyer } from "../ad-data.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "View My Purchases", data: "view_purchases" }) if the toolkit exposes it.
+registerMainMenuItem({ label: "My purchases", data: "view_purchases", order: 20 });
 
-const composer = new Composer();
+const composer = new Composer<Ctx>();
 
 composer.callbackQuery("view_purchases", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("See the status of purchased ad slots");
+  if (!ctx.from) return;
+  const purchases = await purchasesForBuyer(ctx.store, ctx.from.id);
+  if (purchases.length === 0) { await ctx.reply("You don't have any purchases yet — browse ad slots to get started."); return; }
+  const text = purchases.map((p) => `${p.slotName} — ${p.status.replace(/_/g, " ")}${p.txHash ? "\nTransaction: " + p.txHash : ""}`).join("\n\n");
+  await ctx.reply(text, { reply_markup: inlineKeyboard([[inlineButton("Browse ad slots", "browse_slots")], [inlineButton("Back to menu", "menu:main")]]) });
 });
 
 export default composer;

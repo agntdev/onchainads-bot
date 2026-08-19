@@ -1,19 +1,30 @@
 [
   {
-    "name": "Browse Ad Slots",
+    "name": "Browse and inspect an ad slot",
     "steps": [
       {
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "View available ad slots with price and rules"
+              "text": "Choose an ad slot to see its price and placement rules."
             }
           }
         ],
         "send": {
           "callback": "browse_slots"
         }
+      },
+      {
+        "send": { "callback": "slot:channel-post" },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "Channel post\n100 USDC for 1 day.\nOne sponsored post. Content must be relevant and lawful."
+            }
+          }
+        ]
       }
     ]
   }
