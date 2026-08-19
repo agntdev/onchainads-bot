@@ -144,6 +144,26 @@ export class ChatDO {
       }
     }
 
+    // Durable domain records. Callers address this single named DO and keep
+    // explicit index records; no key enumeration is exposed.
+    if (url.pathname === "/data") {
+      const key = url.searchParams.get("key");
+      if (request.method === "GET" && key) {
+        const value = await this.state.storage.get<unknown>("data:" + key);
+        return value === undefined ? new Response(null, { status: 204 }) : Response.json(value);
+      }
+      if (request.method === "DELETE" && key) {
+        await this.state.storage.delete("data:" + key);
+        return new Response(null, { status: 204 });
+      }
+      if (request.method === "PUT") {
+        const body = await request.json() as { key?: unknown; value?: unknown };
+        if (typeof body.key !== "string" || body.key.length === 0) return new Response("bad key", { status: 400 });
+        await this.state.storage.put("data:" + body.key, body.value);
+        return new Response(null, { status: 204 });
+      }
+    }
+
     // Schedule a reminder + (re)arm the alarm to the earliest due one.
     if (url.pathname === "/remind" && request.method === "POST") {
       const rem = (await request.json()) as Reminder;

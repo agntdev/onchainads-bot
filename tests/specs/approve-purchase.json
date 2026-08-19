@@ -1,13 +1,13 @@
 [
   {
-    "name": "Approve Purchase",
+    "name": "Purchase management stays private when owner access is unset",
     "steps": [
       {
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Owner approves a new purchase notification"
+              "text": "Owner access isn't set up yet."
             }
           }
         ],
